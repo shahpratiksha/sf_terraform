@@ -2,23 +2,11 @@ provider "aws"  {
     region = "us-east-1"
 }
 
-data "aws_region" "east"{
-}
-
 provider "aws" {
     alias="bubba-west"
     region = "us-west-2"
 }
 
-data "aws_region" "west"{
-provider="aws.bubba-west"
-}
-
-data "aws_availability_zones" "us-east-zones"{}
-
-data "aws_availability_zones" "us-west-zones"{
-   provider="aws.bubba-west"
-}
 
 locals {
     def_front_name="${join("-",list(var.env-name,"frontend"))}"
@@ -33,7 +21,7 @@ resource "aws_instance" "west_fe"{
     depends_on = ["aws_instance.west_be"]
     availability_zone ="${data.aws_availability_zones.us-west-zones.names[count.index]}"
     provider="aws.bubba-west"
-    ami="${var.amis[data.aws_region.west.name]}"
+    ami="${data.aws_ami.latest-ubuntu-west.id}" #"${var.amis[data.aws_region.west.name]}"
     instance_type="t2.micro"
 }
 
@@ -45,7 +33,7 @@ resource "aws_instance" "west_be"{
     count=2
     availability_zone ="${data.aws_availability_zones.us-west-zones.names[count.index]}"
     provider="aws.bubba-west"
-    ami="${var.amis[data.aws_region.west.name]}"
+    ami="${data.aws_ami.latest-ubuntu-west.id}"
     instance_type="t2.micro"
 }
 
@@ -56,7 +44,7 @@ resource "aws_instance" "east_fe"{
     count="${var.multi-region-deployment ? 1:0}"
     depends_on = ["aws_instance.east_be"]
     availability_zone ="${data.aws_availability_zones.us-east-zones.names[count.index]}"
-    ami="${var.amis[data.aws_region.east.name]}"
+    ami="${data.aws_ami.latest-ubuntu-east.id}"
     instance_type="t2.micro"
 }
 
@@ -67,6 +55,6 @@ resource "aws_instance" "east_be"{
     }
     count="${var.multi-region-deployment ? 1:0}"
     availability_zone ="${data.aws_availability_zones.us-east-zones.names[count.index]}"
-    ami="${var.amis[data.aws_region.east.name]}"
+    ami="${data.aws_ami.latest-ubuntu-east.id}"
     instance_type="t2.micro"
 }
